@@ -24,6 +24,11 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+@app.get("/version")
+def get_version():
+    """Return the current application version."""
+    return {"version": "1.0.0"}
+
 # Register routers
 app.include_router(health_router)
 app.include_router(items_router)
