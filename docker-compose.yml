@@ -1,0 +1,33 @@
+version: "3.9"
+
+services:
+  # --- FastAPI application ---
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      # Inside the Compose network, the MongoDB container is reachable
+      # by its service name "mongo" (Docker Compose creates a shared network
+      # automatically). This overrides the default localhost URL in database.py.
+      - MONGODB_URL=mongodb://mongo:27017
+    depends_on:
+      - mongo
+    restart: unless-stopped
+
+  # --- MongoDB database ---
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      # Named volume to persist MongoDB data across container restarts.
+      # Without this, all data would be lost every time the container stops.
+      - mongo-data:/data/db
+    restart: unless-stopped
+
+volumes:
+  # Declare the named volume so Docker manages it.
+  mongo-data:
