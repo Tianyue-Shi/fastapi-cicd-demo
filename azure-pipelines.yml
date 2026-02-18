@@ -1,0 +1,70 @@
+# Azure DevOps Pipeline
+# This is equivalent to the GitHub Actions CI workflow from Module 4
+
+trigger:
+  branches:
+    include:
+      - main
+
+pr:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+  - stage: Lint
+    displayName: 'Lint Code'
+    jobs:
+      - job: LintJob
+        displayName: 'Run Linter'
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '3.11'
+            displayName: 'Set up Python'
+          - script: pip install ruff
+            displayName: 'Install linter'
+          - script: ruff check .
+            displayName: 'Run ruff'
+
+  - stage: Test
+    displayName: 'Run Tests'
+    dependsOn: []  # Run in parallel with Lint
+    jobs:
+      - job: TestJob
+        displayName: 'Run Pytest'
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '3.11'
+            displayName: 'Set up Python'
+          - script: pip install -r requirements.txt
+            displayName: 'Install dependencies'
+          - script: pytest tests/ -v --junitxml=test-results.xml
+            displayName: 'Run tests'
+          - task: PublishTestResults@2
+            inputs:
+              testResultsFiles: 'test-results.xml'
+            condition: always()
+            displayName: 'Publish test results'
+
+  - stage: Build
+    displayName: 'Build Docker Image'
+    dependsOn:
+      - Lint
+      - Test
+    jobs:
+      - job: BuildJob
+        displayName: 'Build and Push'
+        steps:
+          - task: Docker@2
+            displayName: 'Build Docker image'
+            inputs:
+              command: build
+              Dockerfile: '**/Dockerfile'
+              tags: |
+                $(Build.BuildId)
+                latest

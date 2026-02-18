@@ -1,0 +1,10 @@
+FastAPI CI/CD Demo has been deployed!
+
+To access the application:
+{{- if eq .Values.service.type "NodePort" }}
+  Run: minikube service {{ .Release.Name }}-app -n {{ .Release.Namespace }} --url
+{{- else }}
+  kubectl port-forward svc/{{ .Release.Name }}-app {{ .Values.service.port }}:{{ .Values.service.port }} -n {{ .Release.Namespace }}
+{{- end }}
+
+API Documentation: http://<app-url>/docs
